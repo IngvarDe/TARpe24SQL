@@ -407,5 +407,29 @@ from Employees E
 cross join Employees M
 
 --rida 411
---- 4tund
+--- 4tund 14.03.2025
+
+select isnull('Asd', 'No manager') as Manager
+
+-- NULL asemel kuvab No manager
+select coalesce(NULL, 'No Manager') as Manager
+
+-- kui Expression on õige, siis päneb väärtuse,
+-- mida soovid või mõne teise väärtuse
+case when Expression Then '' else '' end
+
+-- neil kellel ei ole ülemust, siis paneb neile No Manager teksti
+select E.Name as Employees, isnull(M.Name, 'No Manager') as Manager
+from Employees E
+left join Employees M
+on E.ManagerId = M.Id
+
+--- teeme p'ringu, kus kasutame case-i
+select E.Name as Employee, case when M.Name is null then 'No Manager'
+else M.Name end as Manager
+from Employees E
+left join Employees M
+on E.ManagerId = M.Id
+
+
 
