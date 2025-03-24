@@ -882,7 +882,38 @@ select dbo.fnComputeAge('11/11/2010')
 
 -- nr peale DOB muutujat näitab, et mismoodi kuvada DOB-d
 select Id, Name, DateOfBirth,
-convert(nvarchar, DateOfBirth, 126) as ConvertedDOB
+convert(nvarchar, DateOfBirth, 109) as ConvertedDOB
 from EmployeesWithDates
+
+select Id, Name, Name + ' - ' + cast(Id as nvarchar) as [Name-Id] 
+from EmployeesWithDates
+
+select cast(getdate() as date) --tänane kp
+select convert(date, GETDATE()) -- tänane kp
+
+--matemaatilised funktsioonid
+select abs(-101.5) --- abs on absoluutne nr ja tulemuseks saame positiivse väärtuse
+select CEILING(15.2) -- tagastab 16 ja suurendab suurema täisarvu suunas
+select CEILING(-15.2) -- tagastab -15 ja suurendab suurema positiivse täisarvu suunas
+select floor(15.2) --ümardab väiksema arvu suunas
+select floor(-15.2) --ümardab negatiivsema nr poole
+select power(2,4) --hakkab korrutama 2x2x2x2 e 2 astmes 4, esimene nr on korrutatav
+select SQUARE(9) --antud juhul 9 ruudus
+select SQRT(81)    ---annab vastuse 9, ruutjuur
+
+select rand()  --annab suvalise nr
+select floor(rand() * 100)  --oleks täisarvud, aga kasutad rand-i
+
+--- iga kord näitab 10 suvalist nr-t
+declare @counter int
+set @counter = 1
+while (@counter <= 10)
+begin
+	print floor(rand() * 1000)
+	set @counter = @counter + 1
+end
+--rida 938
+--- 7tund
+
 
 
