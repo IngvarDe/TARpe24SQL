@@ -752,6 +752,25 @@ select space(5)
 select FirstName + space(25) + LastName as FullName
 from Employees
 
--- rida 782
----- 6 tund
+
+---- 6 tund 24.03.2025
+
+-- PATINDEX
+-- sama, mis charIndex, aga dünaamilisem ja saab kasutada wildcardi
+select Email, PATINDEX('%@aaa.com', Email) as FirstOccurence
+from Employees
+where PATINDEX('%@aaa.com', Email) > 0  --leian k]ik selle domeeni esindajad ja
+--- alates mitmendast märgist algab @
+
+-- kõik .com-d asendatakse .net-ga
+select Email, REPLACE(Email, '.com', '.net') as ConvertedEmail
+from Employees
+
+--- soovin asnedada peale esimest märki kolm tähte viie tärniga
+select FirstName, LastName, Email,
+	stuff(Email, 2, 3, '*****') as StuffedEmail
+from Employees
+
+
+
 
