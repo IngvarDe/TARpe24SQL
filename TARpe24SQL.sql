@@ -913,7 +913,121 @@ begin
 	set @counter = @counter + 1
 end
 --rida 938
---- 7tund
+--- 7tund 28.03.2025
 
+select Round(850.556, 2) --ümardab kaks kohta peale komat, tulemus 850.560
+select round(850.556, 2, 1) --ümardab allapoole, tulemus 850.550
+select round(850.556, 1) --ümardab ülespoole ja võtab ainult esimest nr peale koma arvesse
+select round(850.556, 0) --ümardab täisarvuni
+select round(850.556, -2) --ümardab sajalise täpsusega
+select round(850.556, -1) --ümardab täisnumber allapoole
 
+---
+create function dbo.CalculateAge(@DOB date)
+returns int
+as begin
+declare @Age int
 
+set @Age = DATEDIFF(YEAR, @DOB, GETDATE()) -
+	case
+		when (MONTH(@DOB) > MONTH(getdate())) or
+			 (MONTH(@DOB) > MONTH(GETDATE()) and DAY(@DOB) > day(GETDATE()))
+		then 1
+		else 0
+		end
+	return @Age
+end
+
+execute CalculateAge '10/08/2020'
+
+select Id, dbo.CalculateAge(DateOfBirth) as Age from EmployeesWithDates
+where dbo.CalculateAge(DateOfBirth) > 36
+
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (1, 'Sam', '1980-12-30 00:00:00.000');
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (2, 'Pam', '1982-09-01 12:02:36.260');
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (3, 'John', '1985-08-22 12:03:30.370');
+INSERT INTO EmployeesWithDates  (Id, Name, DateOfBirth)  
+VALUES (4, 'Sara', '1979-11-29 12:59:30.670');
+
+select * from EmployeesWithDates
+
+-- inline table valued functions
+alter table EmployeesWithDates
+add DepartmentId int
+alter table EmployeesWithDates
+add Gender nvarchar(10)
+
+update EmployeesWithDates set Gender = 'Male', DepartmentId = 1
+where Id = 1
+update EmployeesWithDates set Gender = 'Female', DepartmentId = 2
+where Id = 2
+update EmployeesWithDates set Gender = 'Male', DepartmentId = 1
+where Id = 3
+update EmployeesWithDates set Gender = 'Female', DepartmentId = 3
+where Id = 4
+insert into EmployeesWithDates (Id, Name, DateOfBirth, DepartmentId, Gender)
+values (5, 'Todd', '1978-11-29 12:59:30.670', 1, 'Male')
+
+select * from EmployeesWithDates
+
+-- scalare function annab mingis vahemikus olevaid andmeid,
+-- inline table values ei kasuta begin ja end funktsioone
+-- scalar annab väärtused ja inline annab tabeli
+create function fn_EmployeesByGender(@Gender nvarchar(10))
+returns table
+as
+return (select Id, Name, DateOfBirth, DepartmentId, Gender
+		from EmployeesWithDates
+		where Gender = @Gender)
+
+-- kõik female töötajad
+select * from fn_EmployeesByGender('Female')
+
+select * from fn_EmployeesByGender('Female')
+where Name = 'Pam'  --where abil saab otsingut täpsustada
+
+select * from Department
+
+--kahest erinevast tabelist andmete võtmine ja koos kuvamine
+-- esimene on funktsioon ja teine tabel, 
+--kasutage fn_EmployeesByGender ja tabelit Department, join päring
+select Name, Gender, DepartmentName
+from fn_EmployeesByGender('Male') E
+join Department D
+on D.Id = E.DepartmentId
+
+-- multi-tabel statment
+
+-- inline funktsioon
+create function fn_GetEmployees()
+returns table as
+return (Select Id, Name, cast(DateOfBirth as date)
+		as DOB
+		from EmployeesWithDates)
+
+select * from fn_GetEmployees()
+
+--multi-state puhul peab defineerima uue tabeli veerud koos muutujatega
+create function fn_MS_GetEmployees()
+returns @Table Table (Id int, Name nvarchar(20), DOB date)
+as begin
+	insert into @Table
+	select Id, Name, Cast(DateOfBirth as Date) from EmployeesWithDates
+
+	return
+end
+
+select * from fn_MS_GetEmployees()
+-- mis vahe on inline funktsiooni ja multi-statement vahel???
+--- inline tabeli funktsioonid on paremini töötamas kuna käsitletakse vaatena
+--- multi puhul on pm tegemist stored proceduriga ja kulutab ressurssi rohkem
+
+--muutke andmeid, Sam muutub Sam1
+update fn_GetEmployees() set Name = 'Sam1' where Id = 1 --saab muuta andmeid
+update fn_MS_GetEmployees() set Name = 'Sam' where Id = 1 --ei saa muuta multistate puhul
+
+-- rida 1046
+-- 8 tund
