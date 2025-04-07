@@ -1128,6 +1128,17 @@ end
 
 exec spCreateLocalTempTable
 
+--Erinevused lokaalse ja globaalse ajutise tabeli osas:
+--1. Lokaalsed ajutised tabelid on ühe # märgiga, aga globaalsel on kaks tükki.
+--2. SQL server lisab suvalisi numbreid lokaalse ajutise tabeli nimesse, 
+--aga globaalse puhul seda ei ole.
+--3. Lokaalsed on nähtavad ainult selles sessioonis, mis on selle loonud, 
+--aga globaalsed on nähtavad kõikides sessioonides.
+--4. Lokaalsed ajutised tabelid on automaatselt kustutatud, 
+--kui selle loonud sessioon on kinni pandud, aga globaalsed 
+--ajutised tabelid lõpetatakse viimane viitav ühendus on kinni pandud.
+
+
 --globaalse temp tabeli tegemine e paned kaks # tabeli nime ette
 create table ##PersonDetails(Id int, Name nvarchar(20))
 
@@ -1142,3 +1153,141 @@ Gender nvarchar(10)
 
 select * from EmployeeWithSalary
 
+select * from EmployeeWithSalary
+where Salary > 5000 and Salary < 7000
+
+--loome indeksi, mis asetab palga kahanevasse järjestusse
+create index IX_Employee_Salary
+on EmployeeWithSalary (Salary asc)
+
+-- saame teada, et mis on selle tabeli primaarvõti ja index
+exec sys.sp_helpindex @objname = 'EmployeeWithSalary'
+
+select * from EmployeeWithSalary
+with (index(IX_Employee_Salary))
+
+--saame vaadata tabelit koos selle sisuga alates väga detailsest infost
+select 
+	TableName = t.name,
+	IndexName = ind.name,
+	IndexId = ind.index_id,
+	ColumnId = ic.index_column_id,
+	ColumnName = col.name,
+	ind.*,
+	ic.*,
+	col.*
+from
+	sys.indexes ind
+inner join
+	sys.index_columns ic on ind.object_id = ic.object_id and ind.index_id = ic.index_id
+inner join
+	sys.columns col on ic.object_id = col.object_id and ic.column_id = col.column_id
+inner join
+	sys.tables t on ind.object_id = t.object_id
+where
+	ind.is_primary_key = 0
+	and ind.is_unique = 0
+	and ind.is_unique_constraint = 0
+	and t.is_ms_shipped = 0
+order by
+	t.name, ind.name, ind.index_id, ic.is_included_column, ic.key_ordinal;
+
+--indeksi kustutamine
+drop index EmployeeWithSalary.IX_Employee_Salary
+
+---- indeksi tüübid:
+--1. Klastrites olevad
+--2. Mitte-klastris olevad
+--3. Unikaalsed
+--4. Filtreeritud
+--5. XML
+--6. Täistekst
+--7. Ruumiline
+--8. Veerusäilitav
+--9. Veergude indeksid
+--10. Välja arvatud veergudega indeksid
+
+-- klastris olev indeks määrab ära tabelis oleva füüsilise järjestuse 
+-- ja selle tulemusel saab tabelis olla ainult üks klastris olev indeks
+
+create table EmployeeCity
+(
+Id int primary key,
+Name nvarchar(50),
+Salary int,
+Gender nvarchar(10),
+City nvarchar(50)
+)
+
+exec sp_helpindex EmployeeCity
+
+-- andmete õige järjestuse loovad klastris olevad indeksid ja kasutab selleks Id nr-t
+-- põhjus, miks antud juhul kasutab Id-d, tuleneb primaarvõtmest
+insert into EmployeeCity values(3, 'John', 4500, 'Male', 'New York')
+insert into EmployeeCity values(1, 'Sam', 2500, 'Male', 'London')
+insert into EmployeeCity values(4, 'Sara', 5500, 'Female', 'Tokyo')
+insert into EmployeeCity values(5, 'Todd', 3100, 'Male', 'Toronto')
+insert into EmployeeCity values(2, 'Pam', 6500, 'Male', 'Sydney')
+
+-- klastris olevad indeksid dikteerivad säilitatud andmete järjestuse tabelis 
+-- ja seda saab klastrite puhul olla ainult üks
+
+select * from EmployeeCity
+
+create clustered index IX_EmployeeCity_Name
+on EmployeeCity(Name)
+
+--- annab veateate, et tabelis saab olla ainult üks klastris olev indeks
+--- kui soovid, uut indeksit luua, siis kustuta olemasolev
+
+--- saame luua ainult ühe klastris oleva indeksi tabeli peale
+--- klastris olev indeks on analoogne telefoni suunakoodile
+
+-- loome composite indeksi
+-- enne tuleb kõik teised klastris olevad indeksid ära kustutada
+create clustered index IX_Employee_Gender_Salary
+on EmployeeCity(Gender desc, Salary asc)
+--index on eemaldatud ja nüüd käivitame selle uuesti
+
+select * from EmployeeCity
+
+--- erinevused kahe indeksi vahel
+--- 1. ainult üks klastris olev indeks saab olla tabeli peale, 
+--- mitte-klastris olevaid indekseid saab olla mitu
+--- 2. klastris olevad indeksid on kiiremad kuna indeks peab tagasi viitama tabelile
+--- Juhul, kui selekteeritud veerg ei ole olemas indeksis
+--- 3. Klastris olev indeks määratleb ära tabeli ridade salvestusjärjestuse
+--- ja ei nõua kettal lisa ruumi. Samas mitte klastris olevad indeksid on 
+--- salvestatud tabelist eraldi ja nõuab lisa ruumi
+
+create table EmployeeFirstName
+(
+	Id int primary key,
+	FirstName nvarchar(50),
+	LastName nvarchar(50),
+	Salary int,
+	Gender nvarchar(10),
+	City nvarchar(50)
+)
+
+exec sp_helpindex EmployeeFirstName
+--- ei saa sisestada kahte samasuguse Id väärtusega rida
+insert into EmployeeFirstName values(1, 'Mike', 'Sandoz', 4500, 'Male', 'New York')
+insert into EmployeeFirstName values(1, 'John', 'Menco', 2500, 'Male', 'London')
+
+--
+drop index EmployeeFirstName.PK__Employee__3214EC075E817DE7
+--- kui käivitad ülevalpool oleva koodi, siis tuleb veateade
+--- et SQL server kasutab UNIQUE indeksit jõustamaks väärtuste unikaalsust 
+--- ja primaarvõtit
+--- koodiga Unikaalseid Indekseid ei saa kustutada, aga käsitsi saab
+
+--sisestame uuesti kaks koodirida
+insert into EmployeeFirstName values(1, 'Mike', 'Sandoz', 4500, 'Male', 'New York')
+insert into EmployeeFirstName values(1, 'John', 'Menco', 2500, 'Male', 'London')
+--- unikaalset indeksid kasutatakse kindlustamaks
+--- väärtuste unikaalsust (sh primaarvõtme oma)
+-- mõlemat tüüpi indeksid saavad olla unikaalsed
+
+-- rida 1313
+---9 tund
