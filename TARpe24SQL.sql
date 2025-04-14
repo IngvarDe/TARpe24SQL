@@ -1342,6 +1342,82 @@ join Department
 on Employees.DepartmentId = Department.Id
 
 --loome view
-create view
+create view vEmployeesByDepartment
+as
+select FirstName, Salary, Gender, DepartmentName
+from Employees
+join Department
+on Employees.DepartmentId = Department.Id
 
+--- view päringu esile kutsumine
+select * from vEmployeesByDepartment
 
+-- view ei salvesta andmeid vaikimisi
+-- seda tasub võtta, kui salvestatud virtuaalse tabelina
+
+-- milleks vaja:
+-- saab kasutada andmebaasi skeemi keerukuse lihtsutamiseks,
+-- mitte IT-inimesele
+-- piiratud ligipääs andmetele, ei näe kõiki veerge
+
+-- teeme view, kus näeb ainult IT-töötajaid
+-- view nimi on vITEmployeesInDepartment
+create view vITEmployeesInDepartment
+as
+select FirstName, Salary, Gender, DepartmentName
+from Employees
+join Department
+on Employees.DepartmentId = Department.Id
+where Department.DepartmentName = 'IT'
+-- ülevalpool olevat päringut saab liigitada reataseme turvalisuse alla
+-- tahan ainult näidata IT osakonna töötajaid
+
+select * from vITEmployeesInDepartment
+
+-- veeru taseme turvalisus
+-- peale selecti määratled veergude näitamise ära
+create view vEmployeesInDepartmentSalaryNoShow
+as
+select FirstName, Gender, DepartmentName
+from Employees
+join Department
+on Employees.DepartmentId = Department.Id
+
+select * from vEmployeesInDepartmentSalaryNoShow
+
+-- saab kasutada koondandmete esitlemist ja üksikasjalike andmeid
+-- view, mis tagastab summeeritud andmeid
+create view vEmployeesCountByDepartment
+as
+select DepartmentName, count(Employees.Id) as TotalEmployees
+from Employees
+join Department
+on Employees.DepartmentId = Department.Id
+group by DepartmentName
+
+select * from vEmployeesCountByDepartment
+
+-- kui soovid vaadata view sisu
+sp_helptext vEmployeesCountByDepartment
+-- muuta saab alter k'suga
+-- kustutada saab drop käsuga
+
+--view, mida kasutame andmete uuendamiseks
+create view vEmployeesDataExceptSalary
+as
+select Id, FirstName, Gender, DepartmentId
+from Employees
+
+--kasutame seda view-d, et uuendada andmeid
+--muuta Id 2 all olev eesnimi Tom-ks
+update vEmployeesDataExceptSalary
+set FirstName = 'Tom' where Id = 2
+
+--
+alter view vEmployeesDataExceptSalary
+as
+select Id, FirstName, Gender, DepartmentId
+from Employees
+
+-- kustutame andmeid ja kasutame seda viewd: vEmployeesDataExceptSalary
+-- Id 2 all olevad andmed
