@@ -1291,8 +1291,7 @@ insert into EmployeeFirstName values(1, 'John', 'Menco', 2500, 'Male', 'London')
 --- v‰‰rtuste unikaalsust (sh primaarvıtme oma)
 -- mılemat t¸¸pi indeksid saavad olla unikaalsed
 
--- rida 1313
----9 tund
+---9 tund 14.04.2025
 
 --lisame piirangu, mis n]uab, et veerus ei oleks dublikaate,
 -- aga selles veerus on ja siis ei saa seda rakendada
@@ -1421,3 +1420,71 @@ from Employees
 
 -- kustutame andmeid ja kasutame seda viewd: vEmployeesDataExceptSalary
 -- Id 2 all olevad andmed
+delete vEmployeesDataExceptSalary where Id = 2
+--n[[d lisame andmed
+insert into vEmployeesDataExceptSalary (Id, Gender, DepartmentId, FirstName)
+values(2, 'Female', 2, 'Pam')
+
+-- indekseeritud view
+-- MS SQL-s on indekseeritud view nime all ja 
+-- Oracle-s materjaliseeritud view
+create table product
+(
+Id int primary key,
+Name nvarchar(20),
+UnitPrice int
+)
+
+insert into Product values (1, 'Books', 20)
+insert into Product values (2, 'Pens', 14)
+insert into Product values (3, 'Pencils', 11)
+insert into Product values (4, 'Clips', 10)
+
+create table ProductSales
+(
+Id int,
+QuantitySold int
+)
+
+insert into ProductSales values(1, 10),
+(3, 23),
+(4, 21),
+(2, 12),
+(1, 13),
+(3, 12),
+(4, 13),
+(1, 11),
+(2, 12),
+(1, 14)
+
+--loome view, mis annab meile veerud TotalSales ja TotalTransaction
+create view vTotalSalesByProduct
+with schemabinding
+as
+select Name,
+sum(isnull((QuantitySold * UnitPrice), 0)) as TotalSales,
+COUNT_BIG(*) as TotalTransactions
+from dbo.ProductSales
+join dbo.Product
+on dbo.Product.Id = ProductSales.Id
+group by Name
+
+--- kui soovid luua indeksi view sisse, siis peab j‰rgima teatud reegleid
+-- 1. view tuleb luua koos schemabinding-ga
+-- 2. kui lisafunktsioon select list viitab v‰ljendile ja selle tulemuseks
+-- vıib olla NULL, siis asendusv‰‰rtus peaks olema t‰psustatud. 
+-- Antud juhul kasutasime ISNULL funktsiooni asendamaks NULL v‰‰rtust
+-- 3. kui GroupBy on t‰psustatud, siis view select list peab
+-- sisaldama COUNT_BIG(*) v‰ljendit
+-- 4. Baastabelis peaksid view-d olema viidatud kaheosalise nimega
+-- e antud juhul dbo.Product ja dbo.ProductSales.
+
+select * from vTotalSalesByProduct
+
+create unique clustered index UIX_TotalSalesByProduct_Name
+on vTotalSalesByProduct(Name)
+
+-- rida 1517
+-- tund 10
+
+
