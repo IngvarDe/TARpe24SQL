@@ -1095,6 +1095,8 @@ end
 
 drop table dbo.EmployeesWithDates
 
+drop function fn_GetEmployeeNameById
+
 -- temporary tables
 
 --- #-märgi ette panemisel saame aru, et tegemist on temp tabeliga
@@ -1291,3 +1293,55 @@ insert into EmployeeFirstName values(1, 'John', 'Menco', 2500, 'Male', 'London')
 
 -- rida 1313
 ---9 tund
+
+--lisame piirangu, mis n]uab, et veerus ei oleks dublikaate,
+-- aga selles veerus on ja siis ei saa seda rakendada
+alter table EmployeeFirstName
+add constraint UQ_EmployeeFirstName_City
+unique nonclustered(City)
+
+update EmployeeFirstName
+set City = 'Los Angeles'
+where City = 'New york'
+
+delete EmployeeFirstName
+where Id = 1
+
+select * from EmployeeFirstName
+
+insert into EmployeeFirstName values(3, 'John', 'Menco', 3500, 'Male', 'Berlin')
+
+----Index
+
+exec sp_helpconstraint EmployeeFirstName
+-- 1.Vaikimisi primaarvõti loob unikaalse klastris oleva indeksi, samas unikaalne piirang
+-- loob unikaalse mitte-klastris oleva indeksi
+-- 2. Unikaalset indeksit või piirangut ei saa luua olemasolevasse tabelisse, kui tabel 
+-- juba sisaldab väärtusi võtmeveerus
+-- 3. Vaikimisi korduvaid väärtusied ei ole veerus lubatud,
+-- kui peaks olema unikaalne indeks või piirang. Nt, kui tahad sisestada 10 rida andmeid,
+-- millest 5 sisaldavad korduviad andmeid, siis kõik 10 lükatakse tagasi. Kui soovin ainult 5
+-- rea tagasi lükkamist ja ülejäänud 5 rea sisestamist, siis selleks kasutatakse IGNORE_DUP_KEY
+
+create unique index IX_EmployeeFirstName
+on EmployeeFirstName(City)
+with ignore_dup_key
+
+insert into EmployeeFirstName values(3, 'John', 'Menco', 3512, 'Male', 'Madrid')
+insert into EmployeeFirstName values(4, 'John', 'Menco', 3523, 'Male', 'London1')
+insert into EmployeeFirstName values(4, 'John', 'Menco', 3520, 'Male', 'London1')
+
+select * from EmployeeFirstName
+
+---view 
+---view on salvestatud SQL-i päring. Saab käsitleda ka visrtuaalse tabelina.
+
+select FirstName, Salary, Gender, DepartmentName
+from Employees
+join Department
+on Employees.DepartmentId = Department.Id
+
+--loome view
+create view
+
+
