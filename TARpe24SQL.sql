@@ -1718,6 +1718,76 @@ as begin
 	from inserted
 end
 
+--- raiserror funktsioon
+-- selle eesmärk on tuua välja veateade, kui DepartmentName veerus ei ole väärtust
+-- ja ei klapi uue sisestatud väärtusega. 
+-- Esimene parameeter on veateate sisu, teine on veataseme nr 
+-- (nr 16 tähendab üldiseid vigu),
+-- kolmas on olek
+
+select * from Employee
+
+delete from Employee where Id = 6
+
+update vEmployeeDetails
+set Name = 'Johny', DepartmentName = 'IT'
+where Id = 1
+--ei saa uuendada andmeid kuna mitu tabelit on sellest mõjutatud
+
+update vEmployeeDetails
+set DepartmentName = 'IT'
+where Id = 1
+--nüüd saab uuendada kuna kuna ainult ühes tabelis tahame muuta andmeid
+
+select * from vEmployeeDetails
+
+create trigger tr_vEmployeeDetails_InsteadOfUpdate
+on vEmployeeDetails
+instead of update
+as begin
+
+	if(update(Id))
+	begin
+		raiserror('Id cannot be changed', 16, 1)
+		return
+	end
+
+	if(update(DepartmentName))
+	begin
+		declare @DeptId int
+		select @DeptId = Department.Id
+		from Department
+		join inserted
+		on inserted.DepartmentName = Department.DepartmentName
+
+		if(@DeptId is null)
+		begin
+			raiserror('Invalid Department Name', 16, 1)
+			return
+		end
+
+		update Employee set DepartmentId = @DeptId
+		from inserted
+		join Employee
+		on Employee.Id = inserted.id
+	end
+
+	if(update(Gender))
+	begin
+		update Employee set Gender = inserted.Gender
+		from inserted
+		join Employee
+		on Employee.Id = inserted.id
+	end
+
+	if(update(Name))
+	begin
+		update Employee set Name = inserted.Name
+		from inserted
+		join Employee
+		on Employee.Id = inserted.id
+	end
+end
 
 
 
