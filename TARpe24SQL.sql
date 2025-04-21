@@ -1580,7 +1580,7 @@ select * from EmployeeAudit
 
 -- update trigger
 
-create trigger trEmployeeForUpdate
+alter trigger trEmployeeForUpdate
 on Employees
 for update
 as begin
@@ -1624,35 +1624,35 @@ as begin
 		--loob auditi stringi dünaamiliselt
 		set @AuditString = 'Employee with Id = ' + cast(@Id as nvarchar(4)) + ' changed '
 		if(@OldGender <> @NewGender)
-			set @AuditString = @AuditString + ' Gender from ' + @OldGender + ' to ' +
+			set @AuditString = @AuditString + ', Gender from ' + @OldGender + ' to ' +
 			@NewGender
 
 		if(@OldSalary <> @NewSalary)
-			set @AuditString = @AuditString + ' Salary from ' + cast(@OldSalary as nvarchar(20)) 
+			set @AuditString = @AuditString + ', Salary from ' + cast(@OldSalary as nvarchar(20)) 
 			+ ' to ' + cast(@NewSalary as nvarchar(10))
 
 		if(@OldDepartmentId <> @NewDepartmentId)
-			set @AuditString = @AuditString + ' DepartmentId from ' + cast(@OldDepartmentId as nvarchar(20)) 
+			set @AuditString = @AuditString + ', DepartmentId from ' + cast(@OldDepartmentId as nvarchar(20)) 
 			+ ' to ' + cast(@NewDepartmentId as nvarchar(10))
 
 		if(@OldManagerId <> @NewManagerId)
-			set @AuditString = @AuditString + ' Manager from ' + cast(@OldManagerId as nvarchar(20)) 
+			set @AuditString = @AuditString + ', Manager from ' + cast(@OldManagerId as nvarchar(20)) 
 			+ ' to ' + cast(@NewManagerId as nvarchar(10))
 
 		if(@OldFirstName <> @NewFirstName)
-			set @AuditString = @AuditString + ' FirstName from ' + @OldFirstName + ' to ' +
+			set @AuditString = @AuditString + ', Firstname from ' + @OldFirstName + ' to ' +
 			@NewFirstName
 
 		if(@OldMiddleName <> @NewMiddleName)
-			set @AuditString = @AuditString + ' MiddleName from ' + @OldMiddleName + ' to ' +
+			set @AuditString = @AuditString + ', Middlename from ' + @OldMiddleName + ' to ' +
 			@NewMiddleName
 
 		if(@OldLastName <> @NewLastName)
-			set @AuditString = @AuditString + ' LastName from ' + @OldLastName + ' to ' +
+			set @AuditString = @AuditString + ', Lastname from ' + @OldLastName + ' to ' +
 			@NewLastName
 
 		if(@OldEmail <> @NewEmail)
-			set @AuditString = @AuditString + ' Email from ' + @OldEmail + ' to ' +
+			set @AuditString = @AuditString + ', Email from ' + @OldEmail + ' to ' +
 			@NewEmail
 
 		insert into dbo.EmployeeAudit values (@AuditString)
@@ -1660,6 +1660,12 @@ as begin
 		delete from #TempTable where Id = @Id
 	end
 end
+
+update Employees set FirstName = 'test890', Salary = 4120, MiddleName = 'testXXXXXXX'
+where Id = 10
+
+select * from Employees
+select * from EmployeeAudit
 
 
 
