@@ -1485,6 +1485,51 @@ create unique clustered index UIX_TotalSalesByProduct_Name
 on vTotalSalesByProduct(Name)
 
 -- rida 1517
--- tund 10
+-- tund 10  21.04.2025
 
+--view piirangud
+
+create view vEmployeeDetails
+@Gender nvarchar(20)
+as
+select Id, FirstName, Gender, DepartmentId
+from Employees
+where Gender = @Gender
+--view-sse ei saa kaasa panna parameetreid e antud juhul Gender
+
+--tuleb teha funktsioon, kus parameetriks on gender
+--fnEmployeeDetails
+
+create function fnEmployeeDetails(@Gender nvarchar(20))
+returns table
+as return
+(select Id, FirstName, Gender, DepartmentId
+from Employees where Gender = @Gender)
+
+--funktsiooni esile kutsumine koos parameetritega
+select * from fnEmployeeDetails('male')
+
+--order by kasutamine
+create view vEmployeeDetailsSorted
+as
+select Id, FirstName, Gender, DepartmentId
+from Employees
+order by Id
+--order by-d ei saa kasutada view 
+
+--temp table kasutamine view-s
+
+create table ##TestTempTable(Id int, FirstName nvarchar(20), Gender nvarchar(10))
+
+--sisestame andmed
+insert into ##TestTempTable values(101, 'Martin', 'Male')
+insert into ##TestTempTable values(102, 'Joe', 'Female')
+insert into ##TestTempTable values(103, 'Pam', 'Female')
+insert into ##TestTempTable values(104, 'James', 'Male')
+
+create view vOnTempTable
+as
+select Id, FirstName, Gender
+from ##TestTempTable
+-- temp table-s ei saa kasutada view-d
 
