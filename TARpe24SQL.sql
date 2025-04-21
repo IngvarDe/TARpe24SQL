@@ -1789,6 +1789,15 @@ as begin
 	end
 end
 
+--nüüd saame mitmes tabelis korraga muuta andmeid
+update Employee set Name = 'John123', Gender = 'Male', DepartmentId = 3
+where Id = 1
+
+select * from vEmployeeDetails
+
+--rida 1856
+--tund 11
+
 
 
 
