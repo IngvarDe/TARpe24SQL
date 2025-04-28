@@ -1795,8 +1795,73 @@ where Id = 1
 
 select * from vEmployeeDetails
 
---rida 1856
---tund 11
+--tund 11 28.04.2025
+-- delete trigger
+
+create view vEmployeeCount
+as
+select DepartmentId, DepartmentName, count(*) as TotalEmployees
+from Employee
+join Department
+on Employee.DepartmentId = Department.Id
+group by DepartmentName, DepartmentId
+
+select * from vEmployeeCount
+
+---näitab ära osakonnad, kus on töötajaid 2tk või rohkem
+select  DepartmentName, TotalEmployees from vEmployeeCount
+where TotalEmployees >= 2
+
+select DepartmentName, DepartmentId, count(*) as TotalEmployees
+into #TempEmployeeCount
+from Employee
+join Department
+on Employee.DepartmentId = Department.Id
+group by DepartmentName, DepartmentId
+
+select * from #TempEmployeeCount
+
+select  DepartmentName, TotalEmployees 
+from #TempEmployeeCount
+where TotalEmployees >= 2
+
+create view vEmployeeDetails
+as
+select Employee.Id, Name, Gender, DepartmentName
+from Employee
+join Department
+on Employee.DepartmentId = Department.Id
+
+
+-- kustutada 
+
+create trigger trEmployeeDetails_InsteadOfDelete
+on vEmployeeDetails
+instead of delete
+as begin
+delete Employee
+from Employee
+join deleted
+on Employee.Id = deleted.Id
+end
+
+delete from vEmployeeDetails where Id = 2
+
+---
+select * from Employee
+
+-- p'ritud tabelid ja CTE
+-- CTE tähendab common table expression
+
+insert into Employee values(2, 'Mike', 'Male',2)
+--CTE
+--- CTE-d võivad sarnaneda temp table-ga
+-- sarnane päritud tabelile ja ei ole salvestatud objektina
+-- ning kestab päringu ulatuses
+
+
+
+
 
 
 
