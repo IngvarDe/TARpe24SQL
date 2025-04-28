@@ -1980,8 +1980,145 @@ on Department.Id = Employee.DepartmentId
 )
 update EmployeesByDepartment set DepartmentName = 'HR'
 where Id = 1
+--- kokkuvõte CTE-st
+-- 1. kui CTE baseerub ühel tabelil, siis uuendus töötab
+-- 2. kui CTE baseerub mitmel tablil, siis tuleb veateade
+-- 3. kui CTE baseerub mitmel tabelil ja tahame muuta ainult ühte tabelit, siis
+-- uuendus saab tehtud
 
 
+-- korduv CTE
+--- CTE, mis iseendale viitab, kutsutakse korduvaks CTE-ks
+--- kui tahad andmeid näidata hierarhiliselt
 
+select * from Employee
 
+-- kustutame k]ik andmed tabelist Employee
+truncate table Employee
 
+--kustutada ära veerg nimega Gender
+alter table Employee
+drop column Gender
+
+-- üks võimalus on teha self join
+-- ja kuvada NULL veeru asemel Super Boss
+select Emp.Name as [Employee Name],
+isnull(Manager.Name, 'CEO') as [Manager Name]
+from dbo.Employee Emp
+left join Employee Manager
+on Emp.ManagerId = Manager.Id
+
+--muudke DepartmentId veerg ManagerId nimeks
+exec sp_rename 'Employee.DepartmentId', 'ManagerId'
+
+---
+with EmployeesCTE(Id, Name, ManagerId, [Level])
+as
+(
+	select Employee.Id, Name, ManagerId, 1
+	from Employee
+	where ManagerId is null
+
+	union all
+
+	select Employee.Id, Employee.Name,
+	Employee.ManagerId, EmployeesCTE.[Level] + 1
+	from Employee
+	join EmployeesCTE
+	on Employee.ManagerId = EmployeesCTE.Id
+)
+select EmpCTE.Name as Employee, ISNULL(MgrCTE.Name, 'Super Boss') as Manager,
+EmpCTE.[Level]
+from EmployeesCTE EmpCTE
+left join EmployeesCTE MgrCTE
+on EmpCTE.ManagerId = MgrCTE.Id
+
+--- PIVOT
+
+create table ProductSales
+(
+SalesAgent nvarchar(50),
+SalesCountry nvarchar(50),
+SalesAmount int
+)
+
+insert into ProductSales values('Tom', 'UK', 200)
+insert into ProductSales values('John', 'US', 180)
+insert into ProductSales values('John', 'UK', 260)
+insert into ProductSales values('David', 'India', 450)
+insert into ProductSales values('Tom', 'India', 350)
+
+insert into ProductSales values('David', 'US', 200)
+insert into ProductSales values('Tom', 'US', 130)
+insert into ProductSales values('John', 'India', 540)
+insert into ProductSales values('John', 'UK', 120)
+insert into ProductSales values('David', 'UK', 220)
+
+insert into ProductSales values('John', 'UK', 420)
+insert into ProductSales values('David', 'US', 320)
+insert into ProductSales values('Tom', 'US', 340)
+insert into ProductSales values('Tom', 'UK', 660)
+insert into ProductSales values('John', 'India', 430)
+
+insert into ProductSales values('David', 'India', 230)
+insert into ProductSales values('David', 'India', 280)
+insert into ProductSales values('Tom', 'UK', 480)
+insert into ProductSales values('John', 'UK', 360)
+insert into ProductSales values('David', 'UK', 140)
+
+drop table ProductSales
+drop view vTotalSalesByProduct
+select * from ProductSales
+
+--
+select SalesCountry, SalesAgent, SUM(SalesAmount) as Total
+from ProductSales
+group by SalesCountry, SalesAgent
+order by SalesCountry, SalesAgent
+
+--pivot näide
+select SalesAgent, India, US, UK
+from ProductSales
+pivot
+(
+sum(SalesAmount) for SalesCountry in ([India], [US], [UK])
+)
+as PivotTable
+
+--- päring muudab unikaalsete veergude väärtust (India, US ja UK) SalesCountry veerus
+--- omaette veergudeks koos veergude SalesAmount liitmisega.
+
+create table ProductSalesWithId
+(
+Id int primary key,
+SalesAgent nvarchar(50),
+SalesCountry nvarchar(50),
+SalesAmount int
+)
+
+insert into ProductSalesWithId values(1, 'Tom', 'UK', 200)
+insert into ProductSalesWithId values(2, 'John', 'US', 180)
+insert into ProductSalesWithId values(3, 'John', 'UK', 260)
+insert into ProductSalesWithId values(4, 'David', 'India', 450)
+insert into ProductSalesWithId values(5, 'Tom', 'India', 350)
+
+insert into ProductSalesWithId values(6, 'David', 'US', 200)
+insert into ProductSalesWithId values(7, 'Tom', 'US', 130)
+insert into ProductSalesWithId values(8, 'John', 'India', 540)
+insert into ProductSalesWithId values(9, 'John', 'UK', 120)
+insert into ProductSalesWithId values(10,'David', 'UK', 220)
+
+insert into ProductSalesWithId values(11,'John', 'UK', 420)
+insert into ProductSalesWithId values(12,'David', 'US', 320)
+insert into ProductSalesWithId values(13,'Tom', 'US', 340)
+insert into ProductSalesWithId values(14,'Tom', 'UK', 660)
+insert into ProductSalesWithId values(15,'John', 'India', 430)
+
+insert into ProductSalesWithId values(16,'David', 'India', 230)
+insert into ProductSalesWithId values(17,'David', 'India', 280)
+insert into ProductSalesWithId values(18,'Tom', 'UK', 480)
+insert into ProductSalesWithId values(19,'John', 'UK', 360)
+insert into ProductSalesWithId values(20,'David', 'UK', 140)
+
+--- rida 2202
+-- tund 12
