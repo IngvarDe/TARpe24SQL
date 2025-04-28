@@ -1947,10 +1947,39 @@ on Department.Id = Employee.DepartmentId
 )
 select * from EmployeesByDepartment
 
+-- kasutame joini ja muudame ühes tabelis andmeid
+with EmployeesByDepartment
+as
+(
+select Employee.Id, Name, Gender, DepartmentName
+from Employee
+join Department
+on Department.Id = Employee.DepartmentId
+)
+update EmployeesByDepartment set Gender = 'female' where Id = 1
 
-
-
-
+-- kasutame joini ja muudame mõlemas tabelis andmeid
+with EmployeesByDepartment
+as
+(
+select Employee.Id, Name, Gender, DepartmentName
+from Employee
+join Department
+on Department.Id = Employee.DepartmentId
+)
+update EmployeesByDepartment set Gender = 'Male', DepartmentName = 'HR'
+where Id = 1
+--ei luba mitmes tabelis andmeid korraga muuta
+with EmployeesByDepartment
+as
+(
+select Employee.Id, Name, Gender, DepartmentName
+from Employee
+join Department
+on Department.Id = Employee.DepartmentId
+)
+update EmployeesByDepartment set DepartmentName = 'HR'
+where Id = 1
 
 
 
