@@ -1859,6 +1859,96 @@ insert into Employee values(2, 'Mike', 'Male',2)
 -- sarnane päritud tabelile ja ei ole salvestatud objektina
 -- ning kestab päringu ulatuses
 
+with EmployeeCount(DepartmentName, DepartmentId, TotalEmployees)
+as
+	(
+	select DepartmentName, DepartmentId, count(*) as TotalEmployees
+	from Employee
+	join Department
+	on Employee.DepartmentId = Department.Id
+	group by DepartmentName, DepartmentId
+	)
+select DepartmentName, TotalEmployees
+from EmployeeCount
+where TotalEmployees >= 2
+
+--mitu CTE-d järjest
+with EmployeeCountBy_Payroll_IT_Dept(DepartmentName, Total)
+as
+(
+	select DepartmentName, count(Employee.Id) as TotalEmployees
+	from Employee
+	join Department
+	on Employee.DepartmentId = Department.Id
+	where DepartmentName in('Payroll', 'IT')
+	group by DepartmentName
+),
+--peale koma panemist saad uue CTE juurde kirjutada
+EmployeeCountBy_HR_Admin_Dept(DepartmentName, Total)
+as
+(
+	select DepartmentName, count(Employee.Id) as TotalEmployees
+	from Employee
+	join Department
+	on Employee.DepartmentId = Department.Id
+	group by DepartmentName
+)
+--kui on kaks CTE-d, siis unioni abil ühendada päringud
+select * from EmployeeCountBy_Payroll_IT_Dept
+union
+select * from EmployeeCountBy_HR_Admin_Dept
+
+---
+with EmployeeCount(DepartmentId, TotalEmployees)
+as
+	(
+	select DepartmentId, count(*) as TotalEmployees
+	from Employee
+	group by DepartmentId
+	)
+---select 'Hello'
+--- peale CTE-d peab kohe tulema käsklus SELECT, INSERT, UPDATE või DELETE
+--- kui proovid midagi muud, siis tuleb veateade
+select DepartmentName, TotalEmployees
+from Department
+join EmployeeCount
+on Department.Id = EmployeeCount.DepartmentId
+order by TotalEmployees
+
+--- uuendamine CTE-s
+--- loome lihtsa CTE
+with Employees_Name_Gender
+as
+(
+	select Id, Name, Gender from Employee
+)
+select * from Employees_Name_Gender
+
+-- uuendame andmeid läbi CTE
+-- kasutame CTEd: Employees_Name_Gender
+-- muudame Id ühe all oleva isiku sugu Female peale
+with Employees_Name_Gender
+as
+(
+	select Id, Name, Gender from Employee
+)
+update Employees_Name_Gender set Gender = 'Male' where Id = 1
+
+select * from Employee
+
+-- kasutame joini CTE tegemisel
+with EmployeesByDepartment
+as
+(
+select Employee.Id, Name, Gender, DepartmentName
+from Employee
+join Department
+on Department.Id = Employee.DepartmentId
+)
+select * from EmployeesByDepartment
+
+
+
 
 
 
