@@ -2121,4 +2121,12 @@ insert into ProductSalesWithId values(19,'John', 'UK', 360)
 insert into ProductSalesWithId values(20,'David', 'UK', 140)
 
 --- rida 2202
--- tund 12
+-- tund 12 12.05.2025
+select SalesAgent, India, US, UK
+from ProductSalesWithId
+pivot
+(
+	sum(SalesAmount) for SalesCountry in ([India], [US], [UK])
+)
+as PivotTable
+
