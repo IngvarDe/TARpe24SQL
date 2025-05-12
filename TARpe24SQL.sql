@@ -2120,7 +2120,6 @@ insert into ProductSalesWithId values(18,'Tom', 'UK', 480)
 insert into ProductSalesWithId values(19,'John', 'UK', 360)
 insert into ProductSalesWithId values(20,'David', 'UK', 140)
 
---- rida 2202
 -- tund 12 12.05.2025
 select SalesAgent, India, US, UK
 from ProductSalesWithId
@@ -2405,9 +2404,9 @@ begin
 	insert into ProductSales
 	values(@RandomProductId, @RandomUnitPrice, @RandomQuantitySold)
 
-	print into ProductSales
-	values(@RandomProductId, @RandomUnitPrice, @RandomQuantitySold)
-
 	print @Counter
 	set @Counter = @Counter + 1
 end
+
+--rida 2497
+--tund 13
