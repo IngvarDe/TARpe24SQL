@@ -2353,7 +2353,7 @@ QuantitySold int
 --- sisestame näidisandmed Product tabelisse:
 declare @Id int
 set @Id = 1
-while(@Id <= 30000000)
+while(@Id <= 3000000)
 begin
 	insert into Product values('Product - ' + cast(@Id as nvarchar(20)),
 	'Product - ' + cast(@Id as nvarchar(20)) + ' Description')
@@ -2390,7 +2390,7 @@ set @UpperLimitForQuantitySold = 10
 declare @Counter int
 set @Counter = 1
 
-while(@Counter <= 45000000)
+while(@Counter <= 4500000)
 begin
 	select @RandomProductId = round(((@UpperLimitForProductId -
 	@LowerLimitForProductId) * Rand() + @LowerLimitForProductId), 0)
@@ -2409,4 +2409,49 @@ begin
 end
 
 --rida 2497
---tund 13
+--tund 13 19.05.2025
+
+select Id, Name, Description
+from Product
+where Id in
+(
+select Product.Id from ProductSales
+)
+
+--7 706 798 rida 1:32 ajaga
+
+--- teeme cache puhtaks, et uut päringut ei oleks kuskile vahemällu salvestatud
+checkpoint;
+go
+dbcc DROPCLEANBUFFERS; -- puhastab päringu cache-i
+go
+dbcc FREEPROCCACHE; --puhastab täitva planeeritud cache-i
+go
+
+-- teha inner join päring Product ja ProductSales vahel
+select distinct Product.Id, Name, Description
+from Product
+inner join ProductSales
+on Product.Id = ProductSales.ProductId
+
+-- 100 000 rida 1 sekundiga
+-- teeme cache puhtaks
+
+select Id, Name, Description
+from Product
+where not exists
+(
+select * from ProductSales where ProductId = Product.Id
+)
+-- 7 606 798 rida 37 sekundiga
+-- cache puhtaks teha
+
+--kasutame left joini
+-- kus ProductSales.ProductId on NULL
+select Product.Id, Name, Description
+from Product
+left join ProductSales
+on Product.Id = ProductSales.ProductId
+where ProductSales.ProductId is null
+-- 7 606 798 rida 33 sekundiga
+
